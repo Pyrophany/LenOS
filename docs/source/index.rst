@@ -1,13 +1,11 @@
-Welcome to Lumache's documentation!
+LenOS Documentation
 ===================================
 
-**Lumache** (/lu'make/) is a Python library for cooks and food lovers
-that creates recipes mixing random ingredients.
-It pulls data from the `Open Food Facts database <https://world.openfoodfacts.org/>`_
-and offers a *simple* and *intuitive* API.
+LenOS is the personalized hypnotic control system used by the author, Lena. 
+This documentation is specifically for the custom coding language used, including an API for the associated app to draw from.
+Full documentation, files, and the associated paper can be found at https://github.com/Pyrophany/LenOS/.
 
-Check out the :doc:`usage` section for further information, including
-how to :ref:`installation` the project.
+Check out the :doc:`usage` section for documentation of the coding language used, :doc:`app` for instructions on how to use the associated android app, and :doc:`api` for documentation of the associated API.
 
 .. note::
 
@@ -18,5 +16,6 @@ Contents
 
 .. toctree::
 
-   usage
+   docs
+   app
    api

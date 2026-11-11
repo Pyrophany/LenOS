@@ -2,9 +2,8 @@ LenOS: Sympathetic Cybernetic Augmentation
 ======================================
 DISCLAIMER:
 
-This project involves the use of experimental hypnotic practices, unregulated nonmedical biocompatible implants, and minimally tested code. 
-
-Hypnosis and Body Modification do not come without risks, and research should be performed before following the procedures detailed in this repository.
+This project involves the use of experimental hypnotic practices, unregulated nonmedical biocompatible implants, and AI written code.
+Hypnosis and body modding do not come without risks, and research should be performed before following the procedures detailed in this repository.
 Attempting this project or anything similar must be at your own risk, and I bear no responsibility for any issues that arise.
 
 This is a repository for the systems I have implemented for myself, and is thus highly personalized. You will likely have better results if you develop your own systems that are more personalized.

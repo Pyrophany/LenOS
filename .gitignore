@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,jupyternotebooks
@@ -34,8 +33,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -155,7 +154,6 @@ dmypy.json
 cython_debug/
 
 # End of https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks
-=======
 # Miscellaneous
 *.class
 *.log
@@ -204,4 +202,3 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
->>>>>>> 22b8008 (version: 0.1.0: initial commit)

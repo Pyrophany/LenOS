@@ -16,6 +16,7 @@ Contents
 
 .. toctree::
 
+   process
    docs
    app
    api

@@ -1,7 +1,7 @@
 /// The Headspaces and Traits offered by the Headspace Manager's dropdowns.
 ///
-/// PLACEHOLDER: these are meant to come from the LenOS documentation on Read
-/// the Docs, which has not been written yet. Until then there are no preset
+/// PLACEHOLDER: these are meant to come from the LenOS documentation on the
+/// GitHub wiki, which has not been written yet. Until then there are no preset
 /// options, only Custom (which the Headspace Manager always adds).
 /// When the docs exist, load the lists here and keep [defaults] as the
 /// offline fallback.

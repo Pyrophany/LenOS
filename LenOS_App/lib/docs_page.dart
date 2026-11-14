@@ -6,16 +6,23 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import 'tab_hooks.dart';
 
-/// Browses the LenOS documentation on Read the Docs.
+/// Browses the LenOS documentation on the project's GitHub wiki.
 ///
-/// Only pages on [docsHost] open inside the tab; every other link is handed to
-/// the system browser. The tab keeps its own browsing history (see
+/// Only wiki pages (see [isDocsUrl]) open inside the tab; every other link,
+/// including the rest of GitHub, is handed to the system browser. The tab keeps its own browsing history (see
 /// [_DocsHistory]) so back/forward and the last page viewed survive restarts.
 class DocsPage extends StatefulWidget {
   const DocsPage({super.key});
 
-  static final Uri homeUrl = Uri.parse('https://lenos.readthedocs.io/en/latest/');
-  static final String docsHost = homeUrl.host;
+  static final Uri homeUrl = Uri.parse('https://github.com/Pyrophany/LenOS/wiki');
+
+  /// Whether [uri] is the wiki home or one of its pages.
+  static bool isDocsUrl(Uri? uri) {
+    if (uri == null || uri.host != homeUrl.host) return false;
+    final path = uri.path.toLowerCase();
+    final home = homeUrl.path.toLowerCase();
+    return path == home || path.startsWith('$home/');
+  }
 
   @override
   State<DocsPage> createState() => _DocsPageState();
@@ -91,7 +98,7 @@ class _DocsPageState extends State<DocsPage> {
     if (!request.isMainFrame) return NavigationDecision.navigate;
 
     final uri = Uri.tryParse(request.url);
-    if (uri == null || uri.host == DocsPage.docsHost) {
+    if (uri == null || DocsPage.isDocsUrl(uri)) {
       return NavigationDecision.navigate;
     }
     // Everything off the docs site opens outside the app.
@@ -103,7 +110,7 @@ class _DocsPageState extends State<DocsPage> {
 
   void _onUrlChanged(String url) {
     // Skip about:blank and the like; only docs pages belong in the history.
-    if (Uri.tryParse(url)?.host != DocsPage.docsHost) return;
+    if (!DocsPage.isDocsUrl(Uri.tryParse(url))) return;
     final pending = _pendingIndex;
     if (pending != null) {
       _pendingIndex = null;
@@ -213,9 +220,15 @@ class _DocsHistory {
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      entries = [...?prefs.getStringList(_entriesKey)];
-      index = (prefs.getInt(_indexKey) ?? entries.length - 1)
-          .clamp(-1, entries.length - 1);
+      final saved = [...?prefs.getStringList(_entriesKey)];
+      // Drop pages saved from an older docs site; they no longer belong here.
+      entries = saved
+          .where((url) => DocsPage.isDocsUrl(Uri.tryParse(url)))
+          .toList();
+      index = entries.length == saved.length
+          ? (prefs.getInt(_indexKey) ?? entries.length - 1)
+              .clamp(-1, entries.length - 1)
+          : entries.length - 1;
     } catch (e) {
       debugPrint('Could not load docs history: $e');
     }

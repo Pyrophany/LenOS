@@ -14,14 +14,26 @@ import 'tab_hooks.dart';
 class DocsPage extends StatefulWidget {
   const DocsPage({super.key});
 
-  static final Uri homeUrl = Uri.parse('https://github.com/Pyrophany/LenOS/wiki');
+  /// The wiki itself; every page under it can be browsed inside the tab.
+  static final Uri wikiUrl = Uri.parse('https://github.com/Pyrophany/LenOS/wiki');
 
-  /// Whether [uri] is the wiki home or one of its pages.
+  /// The page the tab opens on and that back/home lead to.
+  static final Uri homeUrl = Uri.parse('$wikiUrl/Documentation');
+
+  /// Whether [uri] is the wiki's landing page or one of its pages.
   static bool isDocsUrl(Uri? uri) {
-    if (uri == null || uri.host != homeUrl.host) return false;
+    if (uri == null || uri.host != wikiUrl.host) return false;
     final path = uri.path.toLowerCase();
-    final home = homeUrl.path.toLowerCase();
-    return path == home || path.startsWith('$home/');
+    final wiki = wikiUrl.path.toLowerCase();
+    return path == wiki || path.startsWith('$wiki/');
+  }
+
+  /// Whether [uri] is the Documentation page ([homeUrl]).
+  static bool isHomeUrl(Uri? uri) {
+    if (uri == null || uri.host != homeUrl.host) return false;
+    var path = uri.path.toLowerCase();
+    if (path.endsWith('/')) path = path.substring(0, path.length - 1);
+    return path == homeUrl.path.toLowerCase();
   }
 
   @override
@@ -229,6 +241,13 @@ class _DocsHistory {
           ? (prefs.getInt(_indexKey) ?? entries.length - 1)
               .clamp(-1, entries.length - 1)
           : entries.length - 1;
+      // Going back always ends on the Documentation page, never anywhere
+      // else in the wiki.
+      if (entries.isNotEmpty &&
+          !DocsPage.isHomeUrl(Uri.tryParse(entries.first))) {
+        entries.insert(0, DocsPage.homeUrl.toString());
+        index++;
+      }
     } catch (e) {
       debugPrint('Could not load docs history: $e');
     }
@@ -239,7 +258,11 @@ class _DocsHistory {
     if (url == current) return; // Reload or same-page update.
     entries = [...entries.take(index + 1), url];
     if (entries.length > _maxEntries) {
-      entries = entries.sublist(entries.length - _maxEntries);
+      // Trim the oldest pages but keep the Documentation page at the bottom.
+      entries = [
+        entries.first,
+        ...entries.sublist(entries.length - _maxEntries + 1),
+      ];
     }
     index = entries.length - 1;
     _save();

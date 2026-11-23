@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:flutter_len_os/device_registry.dart';
-import 'package:flutter_len_os/fs/file_system_model.dart';
-import 'package:flutter_len_os/fs/record_codec.dart';
-import 'package:flutter_len_os/nfc_model.dart';
-import 'package:flutter_len_os/tag_io.dart';
+import 'package:LenOS/device_registry.dart';
+import 'package:LenOS/fs/file_system_model.dart';
+import 'package:LenOS/fs/record_codec.dart';
+import 'package:LenOS/nfc_model.dart';
+import 'package:LenOS/tag_io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nfc_manager/ndef_record.dart';
 import 'package:nfc_manager_ndef/nfc_manager_ndef.dart';
@@ -89,12 +89,26 @@ void main() {
   late DeviceRegistry devices;
   late TagIo io;
 
+  /// Haptic taps so far.
+  var taps = 0;
+
+  /// Notices of cleared Terminal inputs: "device: count".
+  final notices = <String>[];
+
+  TagIo newIo() {
+    taps = 0;
+    notices.clear();
+    return TagIo(nfc, devices,
+        haptic: () async => taps++,
+        onTerminalInputsCleared: (device, n) => notices.add('$device: $n'));
+  }
+
   /// A device "T1" that the app last saw holding [a, b].
   Future<FakeNdef> knownTag({bool cached = true}) async {
     nfc = NfcModel()..setReaderActive(true);
     devices = DeviceRegistry();
     await devices.load();
-    io = TagIo(nfc, devices);
+    io = newIo();
     devices.recordContents('T1', [a, b], 500);
     return FakeNdef([a, b], cached: cached);
   }
@@ -309,7 +323,7 @@ void main() {
       nfc = NfcModel()..setReaderActive(true);
       devices = DeviceRegistry();
       await devices.load();
-      io = TagIo(nfc, devices);
+      io = newIo();
       return FakeNdef(files);
     }
 
@@ -320,12 +334,14 @@ void main() {
       expect(RecordCodec.isTerminalInput(a), isFalse);
     });
 
-    test('a scan leaves them on the device and never writes', () async {
+    test('a scan clears them from the device', () async {
       final tag = await tagWith([a, cmd1, notes, cmdAsText]);
       await io.read('T1', tag);
-      expect(tag.writeCount, 0);
-      expect(texts(tag.files), texts([a, cmd1, notes, cmdAsText]));
-      expect(texts(devices.byUid('T1')!.records), texts(tag.files));
+      expect(tag.writeCount, 1);
+      expect(texts(tag.files), texts([a, notes]));
+      final d = devices.byUid('T1')!;
+      expect(texts(d.records), texts([a, notes]));
+      expect(d.writeInterrupted, isFalse);
     });
 
     test('a scan of a device without them writes nothing', () async {
@@ -334,14 +350,30 @@ void main() {
       expect(tag.writeCount, 0);
     });
 
-    test('the Terminal keeps earlier inputs and adds its own after them',
+    test('a scan that cannot clear them still counts as a read', () async {
+      final tag = await tagWith([a, cmd1]);
+      tag.nextWrite = Write.failsBefore;
+      expect(await io.read('T1', tag), isTrue);
+      expect(texts(tag.files), texts([a, cmd1]));
+    });
+
+    test('the Terminal clears earlier inputs and adds only its own', () async {
+      final tag = await tagWith([a, cmd1, cmdAsText]);
+      devices.recordContents('T1', [a, cmd1, cmdAsText], 500);
+      final error = await write(tag, () => nfc.appendToNextTag([cmd2],
+          addsTerminalInputs: true));
+      expect(error, isNull);
+      expect(texts(tag.files), ['file A', r'lena@LenOS:~$ two']);
+    });
+
+    test('the Terminal sending the same command again leaves one copy',
         () async {
       final tag = await tagWith([a, cmd1]);
       devices.recordContents('T1', [a, cmd1], 500);
-      final error = await write(tag, () => nfc.appendToNextTag([cmd2],
-          keepTerminalInputs: true));
+      final error = await write(tag, () => nfc.appendToNextTag([cmd1],
+          addsTerminalInputs: true));
       expect(error, isNull);
-      expect(texts(tag.files), ['file A', r'lena@LenOS:~$ one', r'lena@LenOS:~$ two']);
+      expect(texts(tag.files), ['file A', r'lena@LenOS:~$ one']);
     });
 
     test('other writes remove them', () async {
@@ -353,13 +385,13 @@ void main() {
       expect(devices.byUid('T1')!.writeInterrupted, isFalse);
     });
 
-    test('a command just sent stays when the tag is detected again', () async {
+    test('a command just sent is cleared by the next scan', () async {
       final tag = await tagWith([a]);
       devices.recordContents('T1', [a], 500);
-      await write(tag, () => nfc.appendToNextTag([cmd1], keepTerminalInputs: true));
+      await write(tag, () => nfc.appendToNextTag([cmd1], addsTerminalInputs: true));
       tag.redetect();
       await io.read('T1', tag);
-      expect(texts(tag.files), ['file A', r'lena@LenOS:~$ one']);
+      expect(texts(tag.files), ['file A']);
     });
 
     test('a damaged device is not touched', () async {
@@ -370,6 +402,89 @@ void main() {
       tag.redetect();
       await io.read('T1', tag);
       expect(tag.writeCount, 0);
+    });
+  });
+
+  group('Haptics', () {
+    test('a haptic tap for each read and each write, none for failures',
+        () async {
+      var tag = await knownTag();
+      await io.read('T1', tag);
+      expect(taps, 1);
+      await write(tag, () => nfc.appendToNextTag([c]));
+      expect(taps, 2);
+
+      tag = await knownTag(cached: false);
+      tag.reads.addAll([Read.fails, Read.fails, Read.fails, Read.fails]);
+      await io.read('T1', tag);
+      await write(tag, () => nfc.appendToNextTag([c]));
+      expect(taps, 0);
+    });
+
+    test('a scan that clears Terminal inputs taps once', () async {
+      nfc = NfcModel()..setReaderActive(true);
+      devices = DeviceRegistry();
+      await devices.load();
+      io = newIo();
+      final tag = FakeNdef([a, RecordCodec.terminalRecord(r'lena@LenOS:~$ x')]);
+      await io.read('T1', tag);
+      expect(tag.writeCount, 1);
+      expect(taps, 1);
+    });
+  });
+
+  group('Cleared notice', () {
+    final cmd1 = RecordCodec.terminalRecord(r'lena@LenOS:~$ one');
+    final cmd2 = RecordCodec.terminalRecord(r'lena@LenOS:~$ two');
+
+    Future<FakeNdef> tagWith(List<NdefRecord> files) async {
+      nfc = NfcModel()..setReaderActive(true);
+      devices = DeviceRegistry();
+      await devices.load();
+      io = newIo();
+      devices.recordContents('T1', files, 500);
+      return FakeNdef(files);
+    }
+
+    test('a scan that clears them gives one notice with the count', () async {
+      final tag = await tagWith([a, cmd1, cmd2]);
+      await io.read('T1', tag);
+      expect(notices, ['T1: 2']);
+    });
+
+    test('a write that clears them gives a notice', () async {
+      final tag = await tagWith([a, cmd1]);
+      await write(tag, () => nfc.appendToNextTag([b]));
+      expect(notices, ['T1: 1']);
+    });
+
+    test('a Terminal send counts only the earlier inputs', () async {
+      final tag = await tagWith([a, cmd1]);
+      await write(tag,
+          () => nfc.appendToNextTag([cmd2], addsTerminalInputs: true));
+      expect(notices, ['T1: 1']);
+    });
+
+    test('nothing cleared, failed clears and fractionate give no notice',
+        () async {
+      var tag = await tagWith([a, b]);
+      await io.read('T1', tag);
+      await write(tag,
+          () => nfc.appendToNextTag([cmd1], addsTerminalInputs: true));
+      expect(notices, isEmpty);
+
+      tag = await tagWith([a, cmd1]);
+      tag.nextWrite = Write.failsBefore;
+      await io.read('T1', tag);
+      expect(notices, isEmpty);
+
+      tag = await tagWith([a, cmd1]);
+      final done = nfc.holdNextTag(
+          (held) => held.write((files) => files, addsTerminalInputs: true));
+      await io.hold('T1', tag, nfc.takePendingHold()!);
+      await done;
+      expect(texts(tag.files), ['file A']);
+      expect(notices, isEmpty);
     });
   });
 }

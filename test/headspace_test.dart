@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_len_os/device_registry.dart';
-import 'package:flutter_len_os/fs/record_codec.dart';
-import 'package:flutter_len_os/headspace.dart';
-import 'package:flutter_len_os/headspace_manager_page.dart';
-import 'package:flutter_len_os/nfc_model.dart';
-import 'package:flutter_len_os/terminal_style.dart';
+import 'package:LenOS/device_registry.dart';
+import 'package:LenOS/fs/record_codec.dart';
+import 'package:LenOS/headspace.dart';
+import 'package:LenOS/headspace_manager_page.dart';
+import 'package:LenOS/nfc_model.dart';
+import 'package:LenOS/terminal_style.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';

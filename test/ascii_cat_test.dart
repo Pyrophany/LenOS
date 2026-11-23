@@ -1,9 +1,9 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_len_os/ascii_cat.dart';
-import 'package:flutter_len_os/terminal_style.dart';
-import 'package:flutter_len_os/theme_model.dart';
+import 'package:LenOS/ascii_cat.dart';
+import 'package:LenOS/terminal_style.dart';
+import 'package:LenOS/theme_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -1,8 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_len_os/ascii_cat.dart';
-import 'package:flutter_len_os/cat_toys.dart';
+import 'package:LenOS/ascii_cat.dart';
+import 'package:LenOS/cat_toys.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

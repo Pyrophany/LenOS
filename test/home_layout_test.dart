@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_len_os/home_sections.dart';
+import 'package:LenOS/home_sections.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

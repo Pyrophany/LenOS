@@ -1,11 +1,11 @@
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_len_os/fractionate.dart';
-import 'package:flutter_len_os/fs/record_codec.dart';
-import 'package:flutter_len_os/nfc_model.dart';
-import 'package:flutter_len_os/terminal_page.dart';
-import 'package:flutter_len_os/terminal_settings.dart';
-import 'package:flutter_len_os/user.dart';
+import 'package:LenOS/fractionate.dart';
+import 'package:LenOS/fs/record_codec.dart';
+import 'package:LenOS/nfc_model.dart';
+import 'package:LenOS/terminal_page.dart';
+import 'package:LenOS/terminal_settings.dart';
+import 'package:LenOS/user.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nfc_manager/ndef_record.dart';
 import 'package:provider/provider.dart';
@@ -27,9 +27,9 @@ class FakeHeldTag implements HeldTag {
 
   @override
   Future<void> write(List<NdefRecord> Function(List<NdefRecord>) build,
-      {bool keepTerminalInputs = false}) async {
-    // Terminal writes must keep earlier Terminal inputs.
-    if (!keepTerminalInputs) throw StateError('Terminal inputs dropped');
+      {bool addsTerminalInputs = false}) async {
+    // Terminal writes must keep the Terminal inputs they add.
+    if (!addsTerminalInputs) throw StateError('Terminal inputs dropped');
     files = build(files);
     writes.add(files.map(RecordCodec.decodeText).toList());
   }

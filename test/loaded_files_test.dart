@@ -1,13 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_len_os/code_editor_page.dart';
-import 'package:flutter_len_os/device_registry.dart';
-import 'package:flutter_len_os/fs/editor_session.dart';
-import 'package:flutter_len_os/fs/file_system_model.dart';
-import 'package:flutter_len_os/fs/record_codec.dart';
-import 'package:flutter_len_os/loaded_files_page.dart';
-import 'package:flutter_len_os/nfc_model.dart';
+import 'package:LenOS/code_editor_page.dart';
+import 'package:LenOS/device_registry.dart';
+import 'package:LenOS/fs/editor_session.dart';
+import 'package:LenOS/fs/file_system_model.dart';
+import 'package:LenOS/fs/record_codec.dart';
+import 'package:LenOS/loaded_files_page.dart';
+import 'package:LenOS/nfc_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nfc_manager/ndef_record.dart';
 import 'package:provider/provider.dart';

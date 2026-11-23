@@ -1,14 +1,14 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_len_os/ascii_cat.dart';
-import 'package:flutter_len_os/cat_personality.dart';
-import 'package:flutter_len_os/device_registry.dart';
-import 'package:flutter_len_os/lena_kitty_page.dart';
-import 'package:flutter_len_os/settings_page.dart';
-import 'package:flutter_len_os/theme_model.dart';
-import 'package:flutter_len_os/terminal_settings.dart';
-import 'package:flutter_len_os/user.dart';
+import 'package:LenOS/ascii_cat.dart';
+import 'package:LenOS/cat_personality.dart';
+import 'package:LenOS/device_registry.dart';
+import 'package:LenOS/lena_kitty_page.dart';
+import 'package:LenOS/settings_page.dart';
+import 'package:LenOS/theme_model.dart';
+import 'package:LenOS/terminal_settings.dart';
+import 'package:LenOS/user.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';

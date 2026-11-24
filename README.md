@@ -9,9 +9,12 @@ This is a repository for the systems I have implemented for myself, and I am thu
 
 If attempting this project yourself, or something similar, I highly recommend reaching out to me via Signal at Aubrey.44, or on Discord @Pyrophany for assistance and direction.
 
+***
 
 ### Hypnotic Principles
 This project has its roots in Ericksonian hypnotic principles, taking the idea of personalized hypnotic suggestion to its extreme. By integrating a hypnotic suggestion within my body (even if in the form of charge states on transistors), the belief that the suggestion is "part of me" is strengthened. The sympathetic link is further strengthened by the framing of a separate system interfacing with the psyche via a "sympathetic" link (sympathetic taken from the idea of sympathetic magic, i.e. changing a small thing to change something larger) and the viewing of the devices as a collective "cybernetic system" (which I suppose would simply be true, as it is an inorganic system affecting the mind, which gives feedback manually via NFC). Utilizing NFC as the read/write protocol, this allows for a strong, continually writable, easily accessible way to affect the mind via hypnotic and post-hypnotic suggestion.
+
+***
 
 ### Methodology
 * Initial Credit: The idea for an implanted hypnotic terminal came from a post on Reddit which I'm unable to find, but the original premise was going off just placebo to set them into a "focus" mode.   
@@ -23,8 +26,12 @@ This project has its roots in Ericksonian hypnotic principles, taking the idea o
 * Later Hypnosis: Later on, self-conditioning was focused on specific implementations, with specific focus given to the Headspace format. Individual conditioning for common Terminal commands was also performed.
 * Upkeep: As with all long-term hypnosis, effectiveness does fade over time. Every few days (or whenever I remember) I drop myself into trance through the terminal and do what I can to maintain the link.
 
+***
+
 ### Cloning and Compilation
 The LenOS App utilizes the Flutter framework, coded in Dart. To clone, install the Flutter extensions to VScode and use the Clone Repository option. For modifying the app for your own use, I highly recommend utilizing Claude Code, as while most of the logic and mapping was human-designed, the codebase is almost entirely written via AI. Codebase maps available on request. I also highly recommend utilizing a physical device connected via USB-C for debugging rather than the in-built emulator, as the emulator doesn't have NFC capability. For building for Android, run `flutter build apk` from the VScode terminal, followed by `flutter install` with an android device connected.
+
+***
 
 # System Documentation
 

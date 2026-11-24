@@ -11,3 +11,5 @@ This is a repository for the systems I have implemented for myself, and I am thu
 If attempting this project yourself, or something similar, I highly recommend reaching out to me via Signal at Aubrey.44, or on Discord @Pyrophany for assistance and direction.
 
 ======================================
+
+Project notes and system documentation is stored at https://github.com/Pyrophany/LenOS/wiki

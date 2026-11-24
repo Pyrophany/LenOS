@@ -36,7 +36,7 @@ The LenOS App utilizes the Flutter framework, coded in Dart. To clone, install t
 # System Documentation
 
 **LenOS is an object-oriented system, intended for emotional regulation, personal improvement, and recreation. The primary component, the LenOS Cybernetic System (LCS) consists of multiple DT xNT biocompatible NFC chips, communicable via 13.56MHz ISO14443A and NFC Type 2, physically separate from the endocrine and nervous systems but interfacing with the psyche through a sympathetic link induced via hypnotic conditioning.**
-
+https://dangerousthings.com/products/xnt
 ***
 
 **Chips are split into three banks:**   

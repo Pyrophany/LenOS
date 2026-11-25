@@ -29,7 +29,7 @@ This project has its roots in Ericksonian hypnotic principles, taking the idea o
 ***
 
 ### Cloning and Compilation
-The LenOS App utilizes the Flutter framework, coded in Dart. To clone, install the Flutter extensions to VScode and use the Clone Repository option. For modifying the app for your own use, I highly recommend utilizing Claude Code, as while most of the logic and mapping was human-designed, the codebase is almost entirely written via AI. Codebase maps available on request. I also highly recommend utilizing a physical device connected via USB-C for debugging rather than the in-built emulator, as the emulator doesn't have NFC capability. For building for Android, run `flutter build apk` from the VScode terminal, followed by `flutter install` with an android device connected.
+The LenOS App utilizes the Flutter framework, coded in Dart. To clone, install the Flutter extensions to VScode and use the Clone Repository option. For modifying the app for your own use, I highly recommend utilizing Claude Code, as while most of the logic and mapping was human-designed, the codebase is almost entirely written via AI. Codebase maps available on request. I also highly recommend utilizing a physical device connected via USB-C for debugging rather than the in-built emulator, as the emulator doesn't have NFC capability. For building for Android, run `flutter build apk` followed by `flutter install` with an android device connected and the Flutter SDK installed
 
 ***
 

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'device_registry.dart';
 import 'fractionate.dart';
 import 'fs/record_codec.dart';
+import 'history.dart';
 import 'nfc_model.dart';
 import 'terminal_settings.dart';
 import 'terminal_style.dart';
@@ -38,6 +40,11 @@ class _TerminalPageState extends State<TerminalPage> {
   final _scroll = ScrollController();
   final _lines = <_Line>[];
   late final NfcModel _nfc;
+
+  /// Kept from the start, so a command finishing after the Terminal was
+  /// closed is still logged.
+  HistoryLog? _history;
+  DeviceRegistry? _devices;
   bool _writing = false;
 
   /// Set while `fractionate` holds a device; [_stop] ends it after its step.
@@ -48,6 +55,12 @@ class _TerminalPageState extends State<TerminalPage> {
   void initState() {
     super.initState();
     _nfc = context.read<NfcModel>();
+    _history = HistoryLog.maybeOf(context);
+    try {
+      _devices = context.read<DeviceRegistry>();
+    } on ProviderNotFoundException {
+      _devices = null;
+    }
   }
 
   @override
@@ -73,6 +86,15 @@ class _TerminalPageState extends State<TerminalPage> {
   static bool _isSudo(String command) =>
       RegExp(r'^sudo(\s|$)').hasMatch(command.trim());
 
+  /// Logs [line] (the full command, as written) in the History.
+  void _logCommand(String line, String uid, {List<String> details = const []}) {
+    _history?.add(HistoryEntry(
+      kind: HistoryKind.terminal,
+      title: 'Terminal command → ${_devices?.byUid(uid)?.label ?? uid}',
+      details: [line, ...details],
+    ));
+  }
+
   void _print(String text, _LineKind kind) {
     setState(() => _lines.add(_Line(text, kind)));
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -95,13 +117,14 @@ class _TerminalPageState extends State<TerminalPage> {
 
     setState(() => _writing = true);
     _print('Searching for NFC device... hold it near the phone.', _LineKind.info);
-    if (_isFractionate(command)) return _fractionate(user);
+    if (_isFractionate(command)) return _fractionate(user, line);
     try {
       // Earlier Terminal inputs are cleared; only this new one is kept.
       final uid = await _nfc.appendToNextTag(
         [RecordCodec.terminalRecord(line)],
         addsTerminalInputs: true,
       );
+      _logCommand(line, uid);
       if (mounted) _print('Written to device $uid.', _LineKind.success);
     } on NfcWriteCancelled {
       if (mounted) _print('^C  Write cancelled.', _LineKind.info);
@@ -116,8 +139,9 @@ class _TerminalPageState extends State<TerminalPage> {
   }
 
   /// Holds the next device and runs [fractionate] on it, sending `trance`
-  /// as [user].
-  Future<void> _fractionate(String user) async {
+  /// as [user]. [line] is the command as entered; the History shows it as
+  /// one command, not each `trance` sent and deleted.
+  Future<void> _fractionate(String user, String line) async {
     _stop = false;
     final trance = RecordCodec.terminalRecord('${_prompt(user)} trance');
     final intervalFor = context.read<TerminalSettings>().dynamicIntervals
@@ -135,6 +159,8 @@ class _TerminalPageState extends State<TerminalPage> {
         sent = await fractionate(tag, trance,
             intervalFor: intervalFor, stopped: () => _stop, log: log);
       });
+      _logCommand(line, uid,
+          details: ['trance sent ${sent == 1 ? '1 time' : '$sent times'}']);
       if (mounted) {
         _print('Fractionated device $uid: trance sent $sent time(s).',
             _LineKind.success);

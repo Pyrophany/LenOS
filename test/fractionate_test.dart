@@ -2,6 +2,7 @@ import 'package:fake_async/fake_async.dart';
 import 'package:flutter/material.dart';
 import 'package:LenOS/fractionate.dart';
 import 'package:LenOS/fs/record_codec.dart';
+import 'package:LenOS/history.dart';
 import 'package:LenOS/nfc_model.dart';
 import 'package:LenOS/terminal_page.dart';
 import 'package:LenOS/terminal_settings.dart';
@@ -171,9 +172,11 @@ void main() {
   testWidgets('Terminal fractionate holds the next device', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final nfc = NfcModel()..setReaderActive(true);
+    final history = HistoryLog(persist: false);
     await tester.pumpWidget(MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: nfc),
+        ChangeNotifierProvider.value(value: history),
         ChangeNotifierProvider(create: (_) => LenOSUser()..name = 'lena'),
         ChangeNotifierProvider(create: (_) => TerminalSettings()),
       ],
@@ -201,6 +204,10 @@ void main() {
     expect(find.text('Fractionated device 04AB: trance sent 1 time(s).'),
         findsOneWidget);
     expect(find.text('Waiting for NFC device'), findsNothing);
+    // The History shows fractionate as the one command entered.
+    expect(history.entries.single.kind, HistoryKind.terminal);
+    expect(history.entries.single.details,
+        [r'lena@LenOS:~$ fractionate', 'trance sent 1 time']);
   });
 
   testWidgets('trance.trm is written as the set user, or root with sudo',

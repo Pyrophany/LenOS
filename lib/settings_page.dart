@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'ascii_cat.dart';
 import 'color_picker_dialog.dart';
 import 'device_registry.dart';
+import 'history.dart';
+import 'history_page.dart';
 import 'lena_kitty_page.dart';
 import 'fs/fs_dialogs.dart';
 import 'terminal_settings.dart';
@@ -63,6 +65,16 @@ class SettingsPage extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context)
                   .push(MaterialPageRoute(builder: (_) => const DevicesPage())),
+            ),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: const Text('History'),
+              subtitle: const Text(
+                'USER changes, reads and writes, Lena Kitty bonks',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const HistoryPage())),
             ),
           ],
         ),
@@ -317,8 +329,10 @@ class _UserNameFieldState extends State<_UserNameField> {
     final error = LenOSUser.validateName(value);
     setState(() => _error = error);
     if (error == null) {
+      final before = _user.name;
       _shown = value.trim().isEmpty ? LenOSUser.defaultName : value.trim();
       _user.name = value;
+      HistoryLog.maybeOf(context)?.userChanged(before, _user.name);
     }
   }
 

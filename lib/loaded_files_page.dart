@@ -11,6 +11,7 @@ import 'fs/file_system_model.dart';
 import 'fs/fs_dialogs.dart';
 import 'fs/len_file.dart';
 import 'fs/record_codec.dart';
+import 'history.dart';
 import 'nfc_model.dart';
 import 'nfc_writing_dialog.dart';
 import 'settings_page.dart';
@@ -405,6 +406,10 @@ class _DeviceFilesPageState extends State<DeviceFilesPage> {
   /// or don't match [_base]. Only set by the recovery options.
   bool _force = false;
 
+  /// The draft is a backup or interrupted write being written back, not
+  /// changes to the device's files.
+  bool _recovery = false;
+
   bool get _editing => _draft != null;
 
   @override
@@ -458,6 +463,7 @@ class _DeviceFilesPageState extends State<DeviceFilesPage> {
       _newFrom = _nextKey; // Nothing is marked NEW in a recovery.
       _moving = false;
       _force = force;
+      _recovery = true;
     });
     _showMessage(message);
   }
@@ -467,7 +473,44 @@ class _DeviceFilesPageState extends State<DeviceFilesPage> {
     _base = null;
     _moving = false;
     _force = false;
+    _recovery = false;
   });
+
+  /// What Accept changes, one line per file, for the History: the file's
+  /// name and what happens to it (Headspace files also show their
+  /// Headspace and Traits).
+  List<String> _changesOf(NfcDevice device) {
+    final fs = context.read<FileSystemModel>();
+    final draft = _draft!;
+    final kept = draft.where((d) => !d.deleted).length;
+    if (_recovery) return ['Restored ${kept == 1 ? '1 file' : '$kept files'}'];
+    String name(int i, NdefRecord r) => HistoryLog.describeFile(
+        _savedMatch(fs, r)?.name ?? _importName(device, i, r), r);
+    final changes = <String>[
+      for (final (i, d) in draft.indexed)
+        if (d.key >= _newFrom && !d.deleted)
+          'Added ${name(i, d.record)}'
+        else if (d.key < _newFrom && d.deleted)
+          'Deleted ${name(i, d.record)}'
+        else if (d.key < _newFrom && d.edited)
+          'Edited ${name(i, d.record)}',
+    ];
+    // The device's files have increasing keys, so out of order means moved.
+    final order = [
+      for (final d in draft)
+        if (d.key < _newFrom && !d.deleted) d.key,
+    ];
+    for (var i = 1; i < order.length; i++) {
+      if (order[i] < order[i - 1]) {
+        changes.add('Reordered files');
+        break;
+      }
+    }
+    if (changes.isEmpty) {
+      changes.add('Rewrote ${kept == 1 ? '1 file' : '$kept files'}');
+    }
+    return changes;
+  }
 
   /// The saved File Manager file with the same content as [record], if any.
   static LenFile? _savedMatch(FileSystemModel fs, NdefRecord record) {
@@ -639,6 +682,8 @@ class _DeviceFilesPageState extends State<DeviceFilesPage> {
 
     final nfc = context.read<NfcModel>();
     final label = device.label;
+    final changes = _changesOf(device);
+    final history = HistoryLog.maybeOf(context);
     final write = nfc.writeToNextTag(
       uid: device.uid,
       force: _force,
@@ -653,6 +698,14 @@ class _DeviceFilesPageState extends State<DeviceFilesPage> {
         }
         return files;
       },
+    );
+    write.then<void>(
+      (_) => history?.add(HistoryEntry(
+        kind: HistoryKind.write,
+        title: 'Wrote to $label',
+        details: changes,
+      )),
+      onError: (Object _) {},
     );
     final outcome = await showDialog<Object>(
       context: context,

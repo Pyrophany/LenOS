@@ -7,6 +7,8 @@ import 'package:nfc_manager_ndef/nfc_manager_ndef.dart';
 
 import 'device_registry.dart';
 import 'fs/record_codec.dart';
+import 'headspace.dart';
+import 'history.dart';
 import 'nfc_model.dart';
 
 /// Reads and writes the files on NFC tags for the app's NFC session, with
@@ -22,7 +24,12 @@ class TagIo {
     this.devices, {
     this.haptic = HapticFeedback.mediumImpact,
     this.onTerminalInputsCleared,
+    this.history,
   });
+
+  /// Where reads are logged, if anywhere. Writes are logged by whoever asked
+  /// for them, since only they know what the write was for.
+  final HistoryLog? history;
 
   final NfcModel nfc;
   final DeviceRegistry devices;
@@ -37,8 +44,9 @@ class TagIo {
   /// Reads [uid]'s files and saves them to [devices], then clears any
   /// Terminal inputs from the device. A failed read keeps the saved copy,
   /// since it says nothing about what is on the device.
-  /// Returns false if the files could not be read.
-  Future<bool> read(String uid, Ndef ndef) async {
+  /// Returns false if the files could not be read. [newDevice] (never
+  /// scanned before) is flagged in the History.
+  Future<bool> read(String uid, Ndef ndef, {bool newDevice = false}) async {
     final files = await readFiles(ndef);
     if (files == null) {
       debugPrint('Could not read $uid; keeping its saved files.');
@@ -47,17 +55,41 @@ class TagIo {
     nfc.setMessage(uid, RecordCodec.messageOf(files));
     devices.recordContents(uid, files, ndef.maxSize);
     debugPrint('Tag $uid: ${files.length} file(s).');
+    var cleared = false;
     if (files.any(RecordCodec.isTerminalInput)) {
       try {
         // A checked write like any other: a damaged device is refused, and
         // one cut short keeps the files from before it for recovery.
         await _write(uid, ndef, build: (existing) => existing);
+        cleared = true;
       } on NfcWriteException catch (e) {
         debugPrint('Could not clear Terminal inputs from $uid: $e');
       }
     }
+    _logRead(uid, files, clearedInputs: cleared, newDevice: newDevice);
     _tap();
     return true;
+  }
+
+  void _logRead(String uid, List<NdefRecord> files,
+      {required bool clearedInputs, required bool newDevice}) {
+    final log = history;
+    if (log == null) return;
+    final kept = RecordCodec.withoutTerminalInputs(files).length;
+    final cleared = files.length - kept;
+    final first = Headspace.firstFile(files);
+    final headspace = first == null ? null : HistoryLog.headspaceOf(first);
+    log.add(HistoryEntry(
+      kind: HistoryKind.read,
+      title: 'Read ${devices.byUid(uid)?.label ?? uid}',
+      newDevice: newDevice,
+      details: [
+        kept == 1 ? '1 file' : '$kept files',
+        if (headspace != null) HistoryLog.describeHeadspace(headspace),
+        if (clearedInputs && cleared > 0)
+          'Cleared $cleared Terminal input${cleared == 1 ? '' : 's'}',
+      ],
+    ));
   }
 
   void _tap() => unawaited(haptic().catchError((Object e) {

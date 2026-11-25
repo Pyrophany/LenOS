@@ -12,6 +12,7 @@ import 'cat_personality.dart';
 import 'docs_page.dart';
 import 'fs/editor_session.dart';
 import 'fs/file_system_model.dart';
+import 'history.dart';
 import 'home_sections.dart';
 import 'nfc_model.dart';
 import 'settings_page.dart';
@@ -25,6 +26,8 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
+        // First, so everything below can log to it.
+        ChangeNotifierProvider(create: (_) => HistoryLog()..load()),
         ChangeNotifierProvider(create: (_) => NfcModel()),
         // Placeholder until the real [USER] class is added (see user.dart).
         ChangeNotifierProvider(create: (_) => LenOSUser()..load()),
@@ -32,9 +35,15 @@ void main() {
         ChangeNotifierProvider(create: (_) => TerminalSettings()..load()),
         ChangeNotifierProvider(create: (_) => CatPersonality()..load()),
         // One Lena Kitty for every page she appears on.
-        Provider(create: (_) => LenaKitty()),
+        Provider(
+          create: (context) =>
+              LenaKitty(onBonk: context.read<HistoryLog>().bonk),
+        ),
         ChangeNotifierProvider(create: (_) => DeviceRegistry()..load()),
-        ChangeNotifierProvider(create: (_) => FileSystemModel()..load()),
+        ChangeNotifierProvider(
+          create: (context) =>
+              FileSystemModel(history: context.read<HistoryLog>())..load(),
+        ),
         ChangeNotifierProvider(
           create: (context) => EditorSession(context.read<FileSystemModel>()),
         ),
@@ -236,7 +245,12 @@ class _LenOSHomeState extends State<LenOSHome> with WidgetsBindingObserver {
     super.initState();
     _nfc = context.read<NfcModel>();
     _devices = context.read<DeviceRegistry>();
-    _tagIo = TagIo(_nfc, _devices, onTerminalInputsCleared: _showCleared);
+    _tagIo = TagIo(
+      _nfc,
+      _devices,
+      history: context.read<HistoryLog>(),
+      onTerminalInputsCleared: _showCleared,
+    );
     WidgetsBinding.instance.addObserver(this);
     _startSession();
   }
@@ -326,7 +340,7 @@ class _LenOSHomeState extends State<LenOSHome> with WidgetsBindingObserver {
       debugPrint('Could not determine the tag UID.');
       return;
     }
-    _devices.recordScan(uid);
+    final newDevice = _devices.recordScan(uid);
     final ndef = Ndef.from(tag);
     // Queued work (e.g. from the Terminal) takes this tag instead of a plain
     // read. A hold keeps the tag (and re-detections are ignored) until done.
@@ -338,7 +352,7 @@ class _LenOSHomeState extends State<LenOSHome> with WidgetsBindingObserver {
       debugPrint('Tag $uid is not compatible with NDEF.');
       return;
     }
-    final ok = await _tagIo.read(uid, ndef);
+    final ok = await _tagIo.read(uid, ndef, newDevice: newDevice);
     if (!ok) await _logTagDiagnostics(uid, tag, ndef);
   }
 

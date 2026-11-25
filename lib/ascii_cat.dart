@@ -325,6 +325,9 @@ class CatSim {
   /// Decides what to do next; replaced when the weights change.
   CatNode behavior;
 
+  /// Called each time the yarn lands on her head.
+  void Function()? onBonk;
+
   double width = 0;
 
   /// Sets the width of the strip she lives in, keeping her and the yarn on it.
@@ -636,6 +639,7 @@ class CatSim {
     hop = 0;
     note = null;
     start(CatAction.bonked);
+    onBonk?.call();
     toys.spawn(CatToy(
       text: 'bonk!',
       width: 5 * charWidth,
@@ -829,12 +833,13 @@ double catLineHeight() {
 /// same cat on every page: what she is doing, where she is, how tired she
 /// is. Provide one above the app.
 class LenaKitty {
-  LenaKitty({Random? random})
+  /// [onBonk] is called each time the yarn lands on her head.
+  LenaKitty({Random? random, void Function()? onBonk})
       : sim = CatSim(
           charWidth: catCharWidth(),
           lineHeight: catLineHeight(),
           random: random,
-        );
+        )..onBonk = onBonk;
 
   final CatSim sim;
   Duration? _lastFrame;

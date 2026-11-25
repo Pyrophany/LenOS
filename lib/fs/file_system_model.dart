@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:nfc_manager/ndef_record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../history.dart';
 import 'len_file.dart';
 
 /// Thrown for invalid file-system operations (bad name, path already taken, ...).
@@ -20,7 +21,19 @@ class FileSystemException implements Exception {
 /// Paths are absolute and use `/` (root is `/`). A folder exists if it was
 /// created explicitly or if any file lives inside it.
 class FileSystemModel extends ChangeNotifier {
+  FileSystemModel({this.history});
+
   static const _storageKey = 'lenos.fs.v1';
+
+  /// Where file changes are logged, if anywhere.
+  final HistoryLog? history;
+
+  void _log(String action, String name, [NdefRecord? record]) =>
+      history?.add(HistoryEntry(
+        kind: HistoryKind.file,
+        title: action,
+        details: [record == null ? name : HistoryLog.describeFile(name, record)],
+      ));
 
   final List<LenFile> _files = [];
   final Set<String> _folders = {};
@@ -177,6 +190,7 @@ class FileSystemModel extends ChangeNotifier {
     );
     _files.add(file);
     _save();
+    _log('File created', file.name, record);
     return file;
   }
 
@@ -187,6 +201,7 @@ class FileSystemModel extends ChangeNotifier {
       ..record = record
       ..modified = DateTime.now();
     _save();
+    _log('File saved', file.name, record);
   }
 
   /// Renames and/or moves a file to [newPath].
@@ -198,15 +213,20 @@ class FileSystemModel extends ChangeNotifier {
     final error = validateName(nameOf(newPath));
     if (error != null) throw FileSystemException(error);
     if (exists(newPath)) throw FileSystemException('"$newPath" already exists');
+    final oldName = file.name;
     file
       ..path = newPath
       ..modified = DateTime.now();
     _save();
+    _log(oldName == file.name ? 'File moved' : 'File renamed',
+        oldName == file.name ? file.name : '$oldName → ${file.name}');
   }
 
   void deleteFile(String id) {
+    final file = byId(id);
     _files.removeWhere((f) => f.id == id);
     _save();
+    if (file != null) _log('File deleted', file.name);
   }
 
   // --- Folders ------------------------------------------------------------

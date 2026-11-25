@@ -6,6 +6,7 @@ import 'ascii_cat.dart';
 import 'device_registry.dart';
 import 'headspace.dart';
 import 'headspace_catalog.dart';
+import 'history.dart';
 import 'headspace_favorites.dart';
 import 'nfc_model.dart';
 import 'nfc_writing_dialog.dart';
@@ -225,7 +226,21 @@ class _HeadspaceManagerPageState extends State<HeadspaceManagerPage> {
       },
     );
     String? uid;
-    write.then<void>((u) => uid = u, onError: (Object _) {});
+    final history = HistoryLog.maybeOf(context);
+    final devices = context.read<DeviceRegistry>();
+    write.then<void>((u) {
+      uid = u;
+      history?.add(HistoryEntry(
+        kind: HistoryKind.headspace,
+        title: 'Headspace written to ${devices.byUid(u)?.label ?? u}',
+        details: [
+          'Headspace: ${headspace.name.trim()}',
+          'Traits: ${headspace.traits.map((t) => t.trim()).join(', ')}',
+          if (headspace.modifier.trim().isNotEmpty)
+            'Modifier: ${headspace.modifier.trim()}',
+        ],
+      ));
+    }, onError: (Object _) {});
 
     final outcome = await showNfcWritingDialog(
       context,

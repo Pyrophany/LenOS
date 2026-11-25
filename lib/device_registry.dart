@@ -212,8 +212,9 @@ class DeviceRegistry extends ChangeNotifier {
     _save();
   }
 
-  /// Remembers that [uid] was just scanned.
-  void recordScan(String uid, {DateTime? at}) {
+  /// Remembers that [uid] was just scanned. Returns true if it was never
+  /// seen before.
+  bool recordScan(String uid, {DateTime? at}) {
     final now = at ?? DateTime.now();
     final device = _byUid[uid];
     if (device == null) {
@@ -222,6 +223,7 @@ class DeviceRegistry extends ChangeNotifier {
       device.lastSeen = now;
     }
     _save();
+    return device == null;
   }
 
   /// Stores what is on [uid] right now: its files and its capacity in bytes.

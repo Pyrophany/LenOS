@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:LenOS/device_registry.dart';
 import 'package:LenOS/fs/file_system_model.dart';
 import 'package:LenOS/fs/record_codec.dart';
+import 'package:LenOS/history.dart';
 import 'package:LenOS/nfc_model.dart';
 import 'package:LenOS/tag_io.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -126,6 +127,20 @@ void main() {
       records!.map(RecordCodec.decodeText).toList();
 
   group('Reading', () {
+    test('the History flags a device scanned for the first time', () async {
+      final tag = await knownTag();
+      final history = HistoryLog(persist: false);
+      io = TagIo(nfc, devices, haptic: () async {}, history: history);
+      expect(devices.recordScan('T2'), isTrue);
+      expect(devices.recordScan('T2'), isFalse);
+      await io.read('T1', tag, newDevice: true);
+      await io.read('T1', tag);
+      expect(history.entries.map((e) => e.newDevice), [false, true]);
+      final saved = HistoryEntry.fromJson(
+          jsonDecode(jsonEncode(history.entries.last.toJson())));
+      expect(saved!.newDevice, isTrue);
+    });
+
     test('a read that returns nothing keeps the files seen at detection', () async {
       final tag = await knownTag();
       tag.reads.addAll([Read.nothing, Read.nothing]);
